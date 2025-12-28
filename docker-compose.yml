@@ -1,0 +1,20 @@
+services:
+  web:
+    build: .
+    ports:
+    - target: 8080
+      published: 32775
+    networks:
+      - default
+
+  redis:
+    image: redis
+    ports:
+    - "6379:6379"
+    networks:
+      - default
+  
+networks:
+  default: 
+
+
