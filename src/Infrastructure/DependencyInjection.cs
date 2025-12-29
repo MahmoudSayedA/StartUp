@@ -68,8 +68,8 @@ namespace Infrastructure
                 options.UseSqlServer(connectionString, sqlOptions =>
                 {
                     sqlOptions.EnableRetryOnFailure(
-                        maxRetryCount: 5,
-                        maxRetryDelay: TimeSpan.FromSeconds(30),
+                        maxRetryCount: 1,
+                        maxRetryDelay: TimeSpan.FromSeconds(3),
                         errorNumbersToAdd: null);
                 });
                 options.ConfigureWarnings(warnings =>
