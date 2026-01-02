@@ -34,7 +34,7 @@ public class RegisterCommandHandler : ICommandHandler<RegisterCommand, string>
     }
     public async Task<string> Handle(RegisterCommand request, CancellationToken cancellationToken)
     {
-        var (result, userId) = await _identityService.RegisterAsync(new RegisterDto
+        var result = await _identityService.RegisterAsync(new RegisterDto
         {
             Username = request.Username,
             Email = request.Email,
@@ -49,7 +49,7 @@ public class RegisterCommandHandler : ICommandHandler<RegisterCommand, string>
             throw new Common.Exceptions.ValidationException(failures);
         }
 
-        return userId;
+        return result.Data.ToString();
     }
 }
 

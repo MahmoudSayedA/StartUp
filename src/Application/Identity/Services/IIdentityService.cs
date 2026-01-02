@@ -6,7 +6,7 @@ namespace Application.Identity.Services
 {
     public interface IIdentityService
     {
-        Task<(Result Result, string UserId)> RegisterAsync(RegisterDto model);
+        Task<Result<Guid>> RegisterAsync(RegisterDto model);
         Task<LoginResponseModel> LoginAsync(LoginDto model);
         Task<UserInfoDto> GetUserInfoAsync(string userId);
         Task<Result> AddRoleToUserAsync(string userId, string role);

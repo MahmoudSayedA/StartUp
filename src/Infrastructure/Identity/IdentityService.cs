@@ -34,7 +34,7 @@ public class IdentityService : IIdentityService
         _authorizationService = authorizationService;
     }
 
-    public async Task<(Result Result, string UserId)> RegisterAsync(RegisterDto model)
+    public async Task<Result<Guid>> RegisterAsync(RegisterDto model)
     {
         ApplicationUser user = new()
         {
@@ -45,10 +45,10 @@ public class IdentityService : IIdentityService
 
         var result = await _userManager.CreateAsync(user, model.Password);
 
-        if (result.Succeeded)
+        if (result.Succeeded && _logger.IsEnabled(LogLevel.Information))
             _logger.LogInformation("User {Username} registered successfully.", model.Username);
 
-        return (result.ToApplicationResult(), user.Id.ToString());
+        return result.ToApplicationResult(user.Id);
     }
     public async Task<LoginResponseModel> LoginAsync(LoginDto model)
     {
