@@ -1,6 +1,15 @@
 ﻿namespace Application.Features.Products.CreateProduct
 {
-    internal class CreateProductValidator
+    public class CreateProductValidator : AbstractValidator<CreateProductCommand>
     {
+        public CreateProductValidator()
+        {
+            RuleFor(p => p.Name)
+                .NotEmpty()
+                .MaximumLength(500);
+
+            RuleFor(p => p.Description)
+                .MaximumLength(5000);
+        }
     }
 }

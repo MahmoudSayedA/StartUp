@@ -7,7 +7,8 @@ namespace Infrastructure.Data.Configurations
     {
         public void Configure(EntityTypeBuilder<Product> builder)
         {
-            builder.Property(p  => p.Name).HasMaxLength(10);
+            builder.Property(p  => p.Name).HasMaxLength(500);
+            builder.Property(p => p.Description).HasMaxLength(5000);
         }
     }
 }
