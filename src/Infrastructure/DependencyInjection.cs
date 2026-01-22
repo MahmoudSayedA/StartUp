@@ -16,9 +16,11 @@ using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Polly;
+using StackExchange.Redis;
 using System.Text;
 
 namespace Infrastructure
@@ -32,10 +34,6 @@ namespace Infrastructure
             ConfigureDbContext(builder.Services, builder.Configuration);
 
             ConfigureIdentity(builder.Services, builder.Configuration);
-
-            // Add resilience policies
-            builder.Services.AddSingleton<IAsyncPolicy>(
-                Policy.Handle<Exception>().CircuitBreakerAsync(2, TimeSpan.FromMinutes(5))); // To be used with redis
 
             // Add policies
             builder.Services.AddAuthorizationBuilder()
@@ -51,12 +49,42 @@ namespace Infrastructure
         }
         private static void ConfigureRedisCache(IServiceCollection services, IConfiguration configuration)
         {
-            services.AddScoped<ICacheService, RedisCacheService>();
+            var redisConnectionString = configuration.GetConnectionString("Redis") ?? "localhost:6379";
+
+            // Configure ConnectionMultiplexer with fail-fast settings
+            var configOptions = ConfigurationOptions.Parse(redisConnectionString);
+            configOptions.ConnectTimeout = 1000;      // 1 second
+            configOptions.SyncTimeout = 1000;
+            configOptions.AsyncTimeout = 1000;
+            configOptions.AbortOnConnectFail = false; // KEY: Don't abort, allow retries
+            configOptions.ConnectRetry = 2;
+
+
+            services.AddSingleton<IConnectionMultiplexer>(sp =>
+            {
+                try
+                {
+                    return ConnectionMultiplexer.Connect(configOptions);
+                }
+                catch (RedisConnectionException ex)
+                {
+                    var logger = sp.GetRequiredService<ILogger>();
+                    logger.LogWarning(ex, "Redis not available at startup, will retry on first use");
+
+                    // Return a connection that will lazy-connect
+                    return ConnectionMultiplexer.Connect(configOptions);
+                }
+            });
+
             services.AddStackExchangeRedisCache(opt =>
             {
-                opt.Configuration = configuration.GetConnectionString("Redis");
+                opt.Configuration = redisConnectionString;
                 opt.InstanceName = "App_";
+                opt.ConfigurationOptions = configOptions;
             });
+
+            services.AddScoped<RedisCacheService>();
+            services.AddScoped<ICacheService, ResilientCacheService>();
         }
 
         private static void ConfigureDbContext(IServiceCollection services, IConfiguration configuration)
