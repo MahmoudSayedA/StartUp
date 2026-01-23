@@ -3,6 +3,7 @@ using Infrastructure;
 using Application;
 using Serilog;
 using Infrastructure.Logging;
+using Hangfire;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -47,6 +48,8 @@ app.UseRateLimiter();
 app.MapControllers();
 
 app.UseSerilogRequestLogging();
+
+app.UseHangfireDashboard("/hangfire");
 
 app.Run();
 

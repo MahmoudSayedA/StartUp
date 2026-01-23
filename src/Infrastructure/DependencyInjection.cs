@@ -1,14 +1,17 @@
 ﻿
 using Application.Common.Abstractions.Caching;
 using Application.Common.Abstractions.Data;
+using Application.Common.Abstractions.Messaging;
 using Application.Features.Products.Services;
 using Application.Identity.Services;
 using Domain.Constants;
+using Hangfire;
 using Infrastructure.Data;
 using Infrastructure.Data.Interceptors;
 using Infrastructure.Identity;
 using Infrastructure.Identity.JWT;
 using Infrastructure.Services.Caching;
+using Infrastructure.Services.Messaging;
 using Infrastructure.Services.Products;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
@@ -47,6 +50,8 @@ namespace Infrastructure
 
             builder.Services.AddScoped<IProductService, CachedProductService>();
             builder.Services.AddScoped<ProductService>();
+
+            builder.Services.AddScoped<IEmailService, FakeEmailService>();
         }
         private static void ConfigureRedisCache(IServiceCollection services, IConfiguration configuration)
         {

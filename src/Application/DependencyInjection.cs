@@ -1,7 +1,10 @@
 ﻿using Application.Common.Behaviours;
+using Hangfire;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System.Reflection;
+using Hangfire.SqlServer;
+using Microsoft.Extensions.Configuration;
 
 namespace Application
 {
@@ -13,6 +16,7 @@ namespace Application
             ConfigureAutoMapper(builder.Services);
 
             ConfigureMediator(builder.Services);
+            ConfigureHangfire(builder.Services, builder.Configuration);
         }
         private static void ConfigureAutoMapper(IServiceCollection services)
         {
@@ -29,6 +33,13 @@ namespace Application
                 cfg.AddBehavior(typeof(IPipelineBehavior<,>), typeof(PerformanceBehaviour<,>));
                 cfg.AddBehavior(typeof(IPipelineBehavior<,>), typeof(UnhandledExceptionBehaviour<,>));
             });
+        }
+        private static void ConfigureHangfire(IServiceCollection services, IConfiguration configuration)
+        {
+            services.AddHangfire(c => c.UseSqlServerStorage(
+                configuration.GetConnectionString("DefaultConnection")));
+
+            services.AddHangfireServer();
         }
     }
 }
