@@ -1,6 +1,7 @@
 ﻿using Application.Common.Exceptions;
 using Application.Identity.Dtos;
 using Application.Identity.Services;
+using Domain.Events.UsersEvents;
 using FluentValidation.Results;
 using System.ComponentModel.DataAnnotations;
 
@@ -28,9 +29,11 @@ public class RegisterCommand : ICommand<string>
 public class RegisterCommandHandler : ICommandHandler<RegisterCommand, string>
 {
     private readonly IIdentityService _identityService;
-    public RegisterCommandHandler(IIdentityService identityService)
+    private readonly IPublisher _publisher;
+    public RegisterCommandHandler(IIdentityService identityService, IPublisher publisher)
     {
         _identityService = identityService;
+        _publisher = publisher;
     }
     public async Task<string> Handle(RegisterCommand request, CancellationToken cancellationToken)
     {
@@ -48,6 +51,17 @@ public class RegisterCommandHandler : ICommandHandler<RegisterCommand, string>
 
             throw new Common.Exceptions.ValidationException(failures);
         }
+        
+        // Raise the UserRegisterEvent
+        var userRegisterEvent = new UserRegisteredEvent
+        {
+            UserId = Guid.Parse(result.Data.ToString()),
+            Email = request.Email,
+            UserName = request.Username
+        };
+        await _publisher.Publish(userRegisterEvent, cancellationToken);
+
+        // You would typically publish this event to an event bus or handle it accordingly
 
         return result.Data.ToString();
     }

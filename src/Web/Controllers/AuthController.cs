@@ -1,12 +1,13 @@
 ﻿using Application.Identity.Commands;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Web.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-public class AuthController(IMediator mediator) : ControllerBase
+public class AuthController(ISender mediator) : ControllerBase
 {
-    private readonly IMediator _mediator = mediator;
+    private readonly ISender _mediator = mediator;
 
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] RegisterCommand command)
@@ -22,11 +23,34 @@ public class AuthController(IMediator mediator) : ControllerBase
         return Ok(res);
     }
 
+    [HttpGet("confirm-email")]
+    public async Task<IActionResult> ConfirmEmail([FromQuery] string email, [FromQuery] string token)
+    {
+        await _mediator.Send(new ConfirmEmailCommand { Email = email, Token = token });
+        return Ok();
+    }
 
-    //[HttpPost("refresh")]
-    //public async Task<IActionResult> Refresh([FromBody] RefreshTokenCommand command)
-    //{
-    //    var res = await _mediator.Send(command);
-    //    return Ok(res);
-    //}
+    [HttpPost("forget-password")]
+    public async Task<IActionResult> ForgetPassword([FromBody] ForgetPasswordCommand command)
+    {
+        var fakeRes = await _mediator.Send(command);
+        return Ok(fakeRes);
+    }
+
+    [HttpGet("reset-password")]
+    public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordCommand command)
+    {
+        await _mediator.Send(command);
+        return NoContent();
+    }
+
+    [Authorize]
+    [HttpPut("change-password")]
+    public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordCommand command)
+    {
+        await _mediator.Send(command);
+        return NoContent();
+    }
+
+
 }

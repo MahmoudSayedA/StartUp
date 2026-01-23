@@ -11,6 +11,7 @@ using Infrastructure.Identity.JWT;
 using Infrastructure.Services.Caching;
 using Infrastructure.Services.Products;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Configuration;
@@ -122,8 +123,10 @@ namespace Infrastructure
                 o.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
                 o.Lockout.MaxFailedAccessAttempts = 5;
 
+
             })
-                .AddEntityFrameworkStores<ApplicationDbContext>();
+                .AddEntityFrameworkStores<ApplicationDbContext>()
+                .AddDefaultTokenProviders(); // you mean this?
 
             // add jwt config
             services.Configure<JwtOptions>(configuration.GetSection("JwtOptions"));

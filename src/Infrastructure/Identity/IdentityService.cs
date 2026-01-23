@@ -2,6 +2,7 @@ using Application.Common.Exceptions;
 using Application.Common.Models;
 using Application.Identity.Dtos;
 using Application.Identity.Services;
+using FluentValidation.Results;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -167,4 +168,63 @@ public class IdentityService : IIdentityService
             Claims = claims.ToDictionary(c => c.Type, c => c.Value)
         };
     }
+
+    public Task SaveRefreshTokenAsync(ApplicationUser user, string refreshToken)
+    {
+        throw new NotImplementedException();
+    }
+
+    public async Task<string> ForgotPasswordAsync(string email)
+    {
+        var user = await _userManager.FindByEmailAsync(email)
+                        ?? throw new NotFoundException(nameof(ApplicationUser), email);
+
+        if (!user.EmailConfirmed)
+            throw new UnauthorizedAccessException("Email is not confirmed.");
+
+        var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+        // TODO: Send email with token (not implemented yet)
+        return token;
+    }
+
+    public async Task<Result> ResetPasswordAsync(ResetPasswordDto model)
+    {
+        var user = await _userManager.FindByEmailAsync(model.Email)
+            ?? throw new NotFoundException(nameof(ApplicationUser), model.Email);
+
+        var result = await _userManager.ResetPasswordAsync(user, model.Token, model.NewPassword);
+
+        if (!result.Succeeded)
+            throw new ValidationException(result.Errors.Select(x => new ValidationFailure(x.Code, x.Description)));
+
+        // await emailService.SendEmailAsync(user.Email!, "Password Reset", "Your password has been reset successfully.", isHtml: true);
+
+        return result.ToApplicationResult();
+    }
+
+    public async Task<Result> ChangePasswordAsync(string userId, ChangePasswordDto model)
+    {
+        var user = await _userManager.FindByIdAsync(userId)
+            ?? throw new NotFoundException(nameof(ApplicationUser), userId);
+
+        var result = await _userManager.ChangePasswordAsync(user!, model.CurrentPassword, model.NewPassword);
+        if (!result.Succeeded)
+            throw new ValidationException(result.Errors.Select(x => new ValidationFailure(x.Code, x.Description)));
+
+        // Send email notification
+        // await emailService.SendEmailAsync(user.Email!, "Password Changed", "Your password has been changed successfully.", isHtml: true);
+
+        return result.ToApplicationResult();
+    }
+
+    public async Task ConfirmEmailAsync(string email, string token)
+    {
+        var user = await _userManager.FindByEmailAsync(email)
+                       ?? throw new NotFoundException(nameof(ApplicationUser), email);
+
+        var result = await _userManager.ConfirmEmailAsync(user, token);
+        if (!result.Succeeded)
+            throw new ValidationException(result.Errors.Select(x => new ValidationFailure(x.Code, x.Description)));
+    }
+
 }

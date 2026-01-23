@@ -1,10 +1,5 @@
 ﻿namespace Application.Identity.Dtos
 {
-    public class ResetPasswordDto
-    {
-        public required string Email { get; set; }
-        public required string Token { get; set; }
-        public required string NewPassword { get; set; }
-    }
+    public record ResetPasswordDto(string Email, string Token,  string NewPassword);
 
 }
