@@ -10,7 +10,10 @@ using Microsoft.Extensions.Logging;
 
 namespace Infrastructure.Identity;
 
-public class IdentityService : IIdentityService
+public class IdentityService : IAuthenticationService,
+                               IPasswordManagementService,
+                               IAccessControlService,
+                               IUserManagementService
 {
     private readonly RoleManager<ApplicationRole> _roleManager;
     private readonly UserManager<ApplicationUser> _userManager;

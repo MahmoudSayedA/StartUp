@@ -10,12 +10,12 @@ public class ForgetPasswordCommand : ICommand<string>
 }
 
 public class ForgetPasswordCommandHandler(
-    IIdentityService identityService) : ICommandHandler<ForgetPasswordCommand, string>
+    IPasswordManagementService passwordManagementService) : ICommandHandler<ForgetPasswordCommand, string>
 {
 
     public async Task<string> Handle(ForgetPasswordCommand request, CancellationToken cancellationToken)
     {
-        var token = await identityService.ForgotPasswordAsync(request.Email);
+        var token = await passwordManagementService.ForgotPasswordAsync(request.Email);
 
         // TODO: Implement email service to send the reset password link
         var emailBody = SendResetPasswordEmail(request.Email, token, request.RedirectUrl);
