@@ -28,16 +28,16 @@ public class RegisterCommand : ICommand<string>
 
 public class RegisterCommandHandler : ICommandHandler<RegisterCommand, string>
 {
-    private readonly IIdentityService _identityService;
+    private readonly IAuthenticationService _authenticationService;
     private readonly IPublisher _publisher;
-    public RegisterCommandHandler(IIdentityService identityService, IPublisher publisher)
+    public RegisterCommandHandler(IAuthenticationService authenticationService, IPublisher publisher)
     {
-        _identityService = identityService;
+        _authenticationService = authenticationService;
         _publisher = publisher;
     }
     public async Task<string> Handle(RegisterCommand request, CancellationToken cancellationToken)
     {
-        var result = await _identityService.RegisterAsync(new RegisterDto
+        var result = await _authenticationService.RegisterAsync(new RegisterDto
         {
             Username = request.Username,
             Email = request.Email,

@@ -10,11 +10,11 @@ public class ResetPasswordCommand : ICommand
     public required string NewPassword { get; set; }
 }
 
-public class ResetPasswordCommandHandler(IIdentityService identityService) : ICommandHandler<ResetPasswordCommand>
+public class ResetPasswordCommandHandler(IPasswordManagementService passwordManagementService) : ICommandHandler<ResetPasswordCommand>
 {
-    private readonly IIdentityService _identityService = identityService;
+    private readonly IPasswordManagementService _passwordManagementService = passwordManagementService;
     public async Task Handle(ResetPasswordCommand request, CancellationToken cancellationToken)
     {
-        await _identityService.ResetPasswordAsync(new Dtos.ResetPasswordDto(request.Email, request.Token, request.NewPassword));
+        await _passwordManagementService.ResetPasswordAsync(new Dtos.ResetPasswordDto(request.Email, request.Token, request.NewPassword));
     }
 }

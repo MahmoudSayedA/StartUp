@@ -16,7 +16,7 @@ public class LoginCommandHandlerTests
             Email = "test@example.com",
             Password = "Password123!"
         };
-        var identityServiceMock = new Mock<IIdentityService>();
+        var identityServiceMock = new Mock<IAuthenticationService>();
         identityServiceMock.Setup(service =>
             service.LoginAsync(It.IsAny<LoginDto>()))
             .ReturnsAsync(new LoginResponseModel

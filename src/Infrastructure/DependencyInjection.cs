@@ -45,7 +45,14 @@ namespace Infrastructure
 
             // Register services
             builder.Services.AddSingleton(TimeProvider.System);
-            builder.Services.AddTransient<IIdentityService, IdentityService>();
+
+            // --- REFACTOR: Split IIdentityService ---
+            builder.Services.AddScoped<IdentityService>();
+            builder.Services.AddScoped<IAuthenticationService>(sp => sp.GetRequiredService<IdentityService>());
+            builder.Services.AddScoped<IPasswordManagementService>(sp => sp.GetRequiredService<IdentityService>());
+            builder.Services.AddScoped<IAccessControlService>(sp => sp.GetRequiredService<IdentityService>());
+            builder.Services.AddScoped<IUserManagementService>(sp => sp.GetRequiredService<IdentityService>());
+
             builder.Services.AddScoped<ITokenGeneratorService, TokenGeneratorService>();
 
             builder.Services.AddScoped<IProductService, CachedProductService>();

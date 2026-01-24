@@ -15,14 +15,14 @@ public class LoginCommand : ICommand<LoginResponseModel>
 
 public class LoginCommandHandler : ICommandHandler<LoginCommand, LoginResponseModel>
 {
-    private readonly IIdentityService _identityService;
-    public LoginCommandHandler(IIdentityService identityService)
+    private readonly IAuthenticationService _authenticationService;
+    public LoginCommandHandler(IAuthenticationService authenticationService)
     {
-        _identityService = identityService;
+        _authenticationService = authenticationService;
     }
     public async Task<LoginResponseModel> Handle(LoginCommand request, CancellationToken cancellationToken)
     {
-        return await _identityService.LoginAsync(new Dtos.LoginDto
+        return await _authenticationService.LoginAsync(new Dtos.LoginDto
         {
             Email = request.Email,
             Password = request.Password,

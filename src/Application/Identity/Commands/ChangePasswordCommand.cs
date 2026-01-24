@@ -13,19 +13,19 @@ public class ChangePasswordCommandHandler : ICommandHandler<ChangePasswordComman
 {
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly IUser _currentUser;
-    private readonly IIdentityService _identityService;
+    private readonly IPasswordManagementService _passwordManagementService;
 
-    public ChangePasswordCommandHandler(UserManager<ApplicationUser> userManager, IUser currentUser, IIdentityService identityService)
+    public ChangePasswordCommandHandler(UserManager<ApplicationUser> userManager, IUser currentUser, IPasswordManagementService passwordManagementService)
     {
         _userManager = userManager;
         _currentUser = currentUser;
-        _identityService = identityService;
+        _passwordManagementService = passwordManagementService;
     }
 
     public async Task Handle(ChangePasswordCommand request, CancellationToken cancellationToken)
     {
         var userId = _currentUser.Id ?? string.Empty;
 
-        await _identityService.ChangePasswordAsync(userId,new Dtos.ChangePasswordDto{ CurrentPassword = request.CurrentPassword, NewPassword = request.NewPassword});
+        await _passwordManagementService.ChangePasswordAsync(userId,new Dtos.ChangePasswordDto{ CurrentPassword = request.CurrentPassword, NewPassword = request.NewPassword});
     }
 }

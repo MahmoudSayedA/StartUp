@@ -8,13 +8,13 @@ public class LoggingBehaviour<TRequest> : IRequestPreProcessor<TRequest> where T
 {
     private readonly ILogger _logger;
     private readonly IUser _user;
-    private readonly IIdentityService _identityService;
+    private readonly IUserManagementService _userManagementService;
 
-    public LoggingBehaviour(ILogger<TRequest> logger, IUser user, IIdentityService identityService)
+    public LoggingBehaviour(ILogger<TRequest> logger, IUser user, IUserManagementService userManagementService)
     {
         _logger = logger;
         _user = user;
-        _identityService = identityService;
+        _userManagementService = userManagementService;
     }
 
     public async Task Process(TRequest request, CancellationToken cancellationToken)
@@ -25,7 +25,7 @@ public class LoggingBehaviour<TRequest> : IRequestPreProcessor<TRequest> where T
 
         if (!string.IsNullOrEmpty(userId))
         {
-            userName = await _identityService.GetUserNameAsync(userId);
+            userName = await _userManagementService.GetUserNameAsync(userId);
         }
 
         _logger.LogInformation("App Request: {Name} {@UserId} {@UserName} {@Request}",

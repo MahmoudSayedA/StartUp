@@ -10,12 +10,12 @@ public class ConfirmEmailCommand : ICommand
     public required string Token { get; set; }
 }
 
-public class ConfirmEmailCommandHandler(IIdentityService identityService) : ICommandHandler<ConfirmEmailCommand>
+public class ConfirmEmailCommandHandler(IAuthenticationService authenticationService) : ICommandHandler<ConfirmEmailCommand>
 {
-    private readonly IIdentityService _identityService = identityService;
+    private readonly IAuthenticationService _authenticationService = authenticationService;
 
     public async Task Handle(ConfirmEmailCommand request, CancellationToken cancellationToken)
     {
-        await _identityService.ConfirmEmailAsync(request.Email, request.Token);
+        await _authenticationService.ConfirmEmailAsync(request.Email, request.Token);
     }
 }

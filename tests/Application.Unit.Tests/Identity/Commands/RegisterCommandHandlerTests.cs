@@ -21,7 +21,7 @@ public class RegisterCommandHandlerTests
             Password = "Password123!",
             ConfirmPassword = "Password123!"
         };
-        var identityServiceMock = new Mock<IIdentityService>();
+        var identityServiceMock = new Mock<IAuthenticationService>();
         identityServiceMock.Setup(service =>
             service.RegisterAsync(It.IsAny<RegisterDto>()))
             .ReturnsAsync(Result<Guid>.Success(Guid.NewGuid()));
