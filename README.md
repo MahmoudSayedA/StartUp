@@ -1,21 +1,21 @@
 ﻿# StartUp - Clean Architecture .NET Template
 
-A production-ready Clean Architecture template built with .NET 10, featuring CQRS, resilient caching, background jobs, and comprehensive authentication.
+A production-ready Clean Architecture template built with **.NET 10**, featuring CQRS, resilient caching, background jobs, and comprehensive authentication.
 
 ## 🚀 Quick Start
 
-### 1. Clone and Setup
+### Option 1: Use as Template (Recommended)
 ```bash
-# Clone the repository
-git clone https://github.com/MahmoudSayedA/StartUp.git MyNewProject
-cd MyNewProject
+# Install the template globally
+dotnet new install CleanArchitecture.Template::1.0.0
 
-# Run setup (Windows)
-.\setup.ps1
+# Create a new project
+dotnet new cleanarch-api -n YourProjectName
 
-# OR setup (Linux/Mac)
-chmod +x setup.sh
-./setup.sh
+# Navigate to your project
+cd YourProjectName
+
+# Run setup script for your OS
 ```
 
 The setup script will:
@@ -23,33 +23,88 @@ The setup script will:
 - ✅ Update namespaces, file names, and configurations
 - ✅ Clean up and prepare your project
 
-### 2. Configure
-Edit `src/Web/appsettings.json`:
-```json
-{
-  "ConnectionStrings": {
-    "DefaultConnection": "Server=localhost;Database=YourDb;User Id=sa;Password=YourPassword;TrustServerCertificate=True",
-    "Redis": "localhost:6379",
-    "Hangfire": "Server=localhost;Database=YourDb_Hangfire;..."
-  },
-  "JwtOptions": {
-    "Secret": "your-super-secret-key-minimum-32-characters-long",
-    "ValidIssuer": "YourApp",
-    "ValidAudience": "YourApp",
-    "ExpiryMinutes": 60
-  }
-}
+### Option 2: Clone and Customize
+- Clone the repository
+```bash
+git clone https://github.com/yourusername/cleanarch-template.git YourProjectName
+cd YourProjectName
+
+# Run setup script for your OS
+```
+## 📋 Setup Instructions
+- For Windows Users:
+```powershell
+# Run the setup script
+.\setup.ps1
+
+# Or with a custom project name
+.\setup.ps1 "MyCustomProjectName"
+```
+- For Linux/Mac Users:
+``` bash 
+# Make the script executable
+chmod +x setup.sh
+
+# Run the setup script
+./setup.sh
+
+# Or with a custom project name
+./setup.sh "MyCustomProjectName"
+```
+### 🎯 What the Setup Script Does
+- ✅ Cleans up: Removes template-specific files and old Git history
+- ✅ Renames: Updates all occurrences of template names to your project name
+- ✅ Initializes Git: Creates a fresh repository with initial commit
+- ✅ Sets up .NET: Restores packages and builds the solution
+- ✅ Removes remotes: Ensures no connections to template repository
+
+## ⚙️ Pre-requisites
+1.  Database Setup
+	- Edit `src/Web/appsettings.json` file
+2.  JWT Configuration
+	- Set a secure secret key in `appsettings.json` under `JwtOptions:Secret`
+3. Environment Variables
+	- Copy .env.example to .env and update values:
+	```
+	ASPNETCORE_ENVIRONMENT=Development
+	CONNECTION_STRING=your-connection-string
+	JWT_SECRET=your-jwt-secret
+	```
+## 🛠️ Development Commands
+### build the database
+```
+# Create migration
+dotnet ef migrations add InitialCreate --project src/YourProject.Infrastructure
+
+# Update database
+dotnet ef database update --project src/YourProject.Infrastructure
+
+# Remove migration
+dotnet ef migrations remove --project src/YourProject.Infrastructure
 ```
 
-### 3. Run Migrations
+### Run
 ```bash
-cd src/Web
-dotnet ef database update
+# Run normally
+dotnet run --project src/YourProject.Web
+
+# Run with hot reload
+dotnet watch run --project src/YourProject.Web
+
+# Run in development mode
+ASPNETCORE_ENVIRONMENT=Development dotnet run
 ```
 
-### 4. Run
+### Test
 ```bash
-dotnet run
+# Run all tests
+dotnet test
+
+# Run specific test project
+dotnet test tests/YourProject.UnitTests
+
+# Run with coverage
+dotnet test --collect:"XPlat Code Coverage"
 ```
 
 Navigate to `https://localhost:7215/swagger`
@@ -142,42 +197,18 @@ Request → Try Cache (with timeout) → On Failure: Circuit Breaker Opens → F
 Controller → Service → Repository → DbContext
 ```
 
-## 🔧 Configuration
-
-### Required Services
-
-1. **SQL Server** - Primary database
-2. **Redis** (Optional) - Caching layer with automatic fallback
-3. **Hangfire Database** - Background job storage
-
-### Environment Variables
-
-You can use environment variables instead of appsettings.json:
-
-```bash
-ConnectionStrings__DefaultConnection="Server=..."
-ConnectionStrings__Redis="localhost:6379"
-JwtOptions__Secret="your-secret-key"
-```
-
-## 🧪 Testing
-
-```bash
-# Run all tests
-dotnet test
-
-# Run with coverage
-dotnet test /p:CollectCoverage=true
-```
 
 ## 🐳 Docker Support
 
 ```bash
 # Build and run with Docker Compose
-docker-compose up -d
+docker-compose up --build
 
-# Build image
-docker build -t startup-api .
+# Run specific services
+docker-compose up db redis api
+
+# View logs
+docker-compose logs -f api
 ```
 
 ## 📝 API Documentation
@@ -205,11 +236,23 @@ Once running, access interactive API documentation at:
 - Redis: 1 second connect timeout
 - Operations: 500ms timeout with Polly
 
+
+## Future Enhancements
+- Support  DeploymentTo Azure App Service
+- Support Kubernetes
+- Implement GraphQL API alongside REST
+- 
+
 ## 📚 Resources
 
 - [Clean Architecture by Robert C. Martin](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html)
 - [CQRS Pattern](https://docs.microsoft.com/en-us/azure/architecture/patterns/cqrs)
 - [Circuit Breaker Pattern](https://docs.microsoft.com/en-us/azure/architecture/patterns/circuit-breaker)
+
+## Support
+- You can reach out for support via GitHub Issues on the repository page.
+- Or contact me at: [email](mailto:mahmoudsayed1332002@gmail.com)
+
 
 ## 🤝 Contributing
 
