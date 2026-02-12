@@ -43,8 +43,8 @@ public static class DependencyInjection
                 Description = "JWT Authorization header using the Bearer scheme. Example: \"Bearer {token}\"",
                 Name = "Authorization",
                 In = ParameterLocation.Header,
-                Type = SecuritySchemeType.ApiKey,
-                Scheme = "Bearer"
+                Type = SecuritySchemeType.Http,
+                Scheme = "bearer"
             });
 
             var securityRequirement = new OpenApiSecurityRequirement
@@ -54,10 +54,13 @@ public static class DependencyInjection
                     new List<string>()
                 }
             };
-            opt.AddSecurityRequirement((document) => securityRequirement);
-
+            opt.AddSecurityRequirement(doc => new OpenApiSecurityRequirement
+            {
+                [new OpenApiSecuritySchemeReference("Bearer", doc)] = []
+            });
 
         });
+
     }
     private static void AddRateLimiter(IHostApplicationBuilder builder)
     {
