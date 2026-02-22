@@ -14,6 +14,7 @@ public class IntegrationTestWebAppFactory : WebApplicationFactory<Program>, IAsy
     private readonly MsSqlContainer _dbContainer = new 
         MsSqlBuilder(image: "mcr.microsoft.com/mssql/server:2022-latest")
         .WithPassword("P@ssw0rd")
+
         .Build();
     
     protected override void ConfigureWebHost(IWebHostBuilder builder)

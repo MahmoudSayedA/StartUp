@@ -1,4 +1,5 @@
-﻿using Application.Features.Products.CreateProduct;
+﻿using Application.Common.Exceptions;
+using Application.Features.Products.CreateProduct;
 using Application.Features.Products.GetById;
 using Microsoft.EntityFrameworkCore;
 
@@ -18,7 +19,7 @@ public class ProductTests(IntegrationTestWebAppFactory factory) : BaseIntegratio
         // Act
         var productId = await _sender.Send(command);
         // Assert
-        var product = await _dbContext.Products.FindAsync(Guid.Parse(productId));
+        var product = await _dbContext.Products.FindAsync(Ulid.Parse(productId));
         Assert.NotNull(product);
         Assert.Equal("Test Product1", product!.Name);
         Assert.Equal("This is a test product.", product.Description);
@@ -34,7 +35,7 @@ public class ProductTests(IntegrationTestWebAppFactory factory) : BaseIntegratio
         // Act
         var productId = await _sender.Send(command);
         // Assert
-        var product = await _dbContext.Products.FindAsync(Guid.Parse(productId));
+        var product = await _dbContext.Products.FindAsync(Ulid.Parse(productId));
         Assert.NotNull(product);
         Assert.Equal("Test Product2", product!.Name);
         Assert.Null(product.Description);
@@ -48,7 +49,7 @@ public class ProductTests(IntegrationTestWebAppFactory factory) : BaseIntegratio
             Name = ""
         };
         // Act & Assert
-        await Assert.ThrowsAsync<FluentValidation.ValidationException>(async () =>
+        await Assert.ThrowsAsync<ValidationException>(async () =>
         {
             await _sender.Send(command);
         });
@@ -62,7 +63,7 @@ public class ProductTests(IntegrationTestWebAppFactory factory) : BaseIntegratio
             Name = null!
         };
         // Act & Assert
-        await Assert.ThrowsAsync<FluentValidation.ValidationException>(async () =>
+        await Assert.ThrowsAsync<ValidationException>(async () =>
         {
             await _sender.Send(command);
         });
@@ -71,13 +72,13 @@ public class ProductTests(IntegrationTestWebAppFactory factory) : BaseIntegratio
     public async Task CreateCommand_WithLongName_ShouldThrowValidationException()
     {
         // Arrange
-        var longName = new string('A', 201); // Assuming max length is 200
+        var longName = new string('A', 501); // Assuming max length is 200
         var command = new CreateProductCommand
         {
             Name = longName
         };
         // Act & Assert
-        await Assert.ThrowsAsync<FluentValidation.ValidationException>(async () =>
+        await Assert.ThrowsAsync<ValidationException>(async () =>
         {
             await _sender.Send(command);
         });
@@ -86,14 +87,14 @@ public class ProductTests(IntegrationTestWebAppFactory factory) : BaseIntegratio
     public async Task CreateCommand_WithLongDescription_ShouldThrowValidationException()
     {
         // Arrange
-        var longDescription = new string('B', 1001); // Assuming max length is 1000
+        var longDescription = new string('B', 6000); // Assuming max length is 1000
         var command = new CreateProductCommand
         {
             Name = "Valid Name",
             Description = longDescription
         };
         // Act & Assert
-        await Assert.ThrowsAsync<FluentValidation.ValidationException>(async () =>
+        await Assert.ThrowsAsync<ValidationException>(async () =>
         {
             await _sender.Send(command);
         });
