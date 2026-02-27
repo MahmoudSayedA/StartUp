@@ -1,10 +1,13 @@
-﻿using Infrastructure.Data;
+﻿using Hangfire;
+using Hangfire.MemoryStorage;
+using Infrastructure.Data;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Testcontainers.MsSql;
 
 namespace Application.Integration.Tests;
@@ -16,15 +19,17 @@ public class IntegrationTestWebAppFactory : WebApplicationFactory<Program>, IAsy
         .WithPassword("P@ssw0rd")
 
         .Build();
-    
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.ConfigureTestServices(services =>
         {
-            var descriptor = services.SingleOrDefault(d => d.ServiceType == typeof(DbContextOptions<ApplicationDbContext>));
-            if (descriptor != null)
+
+            var dbContextDescriptor = services.SingleOrDefault(d => d.ServiceType == typeof(DbContextOptions<ApplicationDbContext>));
+
+            if (dbContextDescriptor != null)
             {
-                services.Remove(descriptor);
+                services.Remove(dbContextDescriptor);
             }
 
             string masterConn = _dbContainer.GetConnectionString();
@@ -37,6 +42,13 @@ public class IntegrationTestWebAppFactory : WebApplicationFactory<Program>, IAsy
             services.AddDbContext<ApplicationDbContext>(opt =>
             {
                 opt.UseSqlServer(connectionString);
+            });
+
+            // update hangfire configuration
+            services.RemoveAll<JobStorage>();
+            services.AddHangfire(config =>
+            {
+                config.UseMemoryStorage();
             });
         });
 
