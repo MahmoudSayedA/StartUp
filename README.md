@@ -1,64 +1,107 @@
-﻿# StartUp - Clean Architecture .NET Template
+﻿# StartUp – Clean Architecture Template for .NET 10
 
-A production-ready Clean Architecture template built with **.NET 10**, featuring CQRS, resilient caching, background jobs, and comprehensive authentication.
+[![.NET](https://img.shields.io/badge/.NET-10.0-blue?logo=dotnet)](https://dotnet.microsoft.com)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Stars](https://img.shields.io/github/stars/MahmoudSayedA/StartUp?style=social)](https://github.com/MahmoudSayedA/StartUp)
+
+**Production-ready Clean Architecture starter kit** built with modern .NET practices.  
+Perfect for scalable APIs, microservices. Features CQRS, MediatR, EF Core, JWT, Redis caching with Polly resilience, Hangfire background jobs, Serilog structured logging, ULID IDs, FluentValidation, and Swagger.
+
+----
+
+### Why StartUp?
+- Clear separation of concerns (Domain → Application → Infrastructure → Web)
+- Ready for real-world use (auth, caching, background jobs, resilience)
+- Minimal boilerplate – focus on business logic
+- Extensible for Docker, CI/CD, or frontend (React/Angular)
+
+-----
 
 ## 🚀 Quick Start
 
-### Option 1: Use as Template (Recommended)
+## option 2: Use NuGet Template (Recommended)
 ```bash
 # Install the template globally
-dotnet new install CleanArchitecture.Template::1.0.0
+dotnet new install MahmoudSayedA.StartUp.Template::10.0.0
 
-# Create a new project
+# Create new project
+dotnet new clean-arch-api -n MyAwesomeApp
+
+cd MyAwesomeApp
+dotnet run --project src/Web
+```
+
+Open:
+
+- Swagger UI: https://localhost:7215/swagger
+- Hangfire Dashboard: https://localhost:7215/hangfire 
+
+
+### Option 2: Clone then create your instance
+```bash
+# Clone
+git clone https://github.com/MahmoudSayedA/StartUp.git
+cd StartUp
+
+# Restore & run
+dotnet restore
+dotnet run --project src/Web
+
+# create your instance // inside StartUp root sln folder
+dotnet new install .
+
 dotnet new cleanarch-api -n YourProjectName
 
-# Navigate to your project
 cd YourProjectName
 
-# Run setup script for your OS
+# run 
+dotnet run --project src/Web
 ```
-
-The setup script will:
-- ✅ Rename all occurrences of "StartUp" to your project name
-- ✅ Update namespaces, file names, and configurations
-- ✅ Clean up and prepare your project
-
-### Option 2: Clone and Customize
-- Clone the repository
+### option 3: Clone and use the setup script
 ```bash
-git clone https://github.com/yourusername/cleanarch-template.git YourProjectName
-cd YourProjectName
+git clone https://github.com/MahmoudSayedA/StartUp.git MyAwesomeApp
+cd MyAwesomeApp
 
-# Run setup script for your OS
+# Optional: Run setup script to rename project (if included)
+.\setup.ps1 "MyAwesomeApp"    # Windows
+# or
+chmod +x setup.sh && ./setup.sh "MyAwesomeApp"   # Linux/Mac
+
+# Restore & run
+dotnet restore
+dotnet run --project src/Web
 ```
-## 📋 Setup Instructions
-- For Windows Users:
-```powershell
-# Run the setup script
-.\setup.ps1
+-------
 
-# Or with a custom project name
-.\setup.ps1 "MyCustomProjectName"
+### 🐳 Docker Compose Support
+```bash
+# Build and start all services (API + SQL Server + Redis + Hangfire)
+docker-compose up --build
+
+# Or start in detached mode
+docker-compose up -d
+
+# View logs
+docker-compose logs -f api
+
+# Stop everything
+docker-compose down
 ```
-- For Linux/Mac Users:
-``` bash 
-# Make the script executable
-chmod +x setup.sh
+Included services:
 
-# Run the setup script
-./setup.sh
+- web: The .NET Web API
+- sqlserver: SQL Server
+- redis: Redis for caching
 
-# Or with a custom project name
-./setup.sh "MyCustomProjectName"
-```
-### 🎯 What the Setup Script Does
-- ✅ Cleans up: Removes template-specific files and old Git history
-- ✅ Renames: Updates all occurrences of template names to your project name
-- ✅ Initializes Git: Creates a fresh repository with initial commit
-- ✅ Sets up .NET: Restores packages and builds the solution
-- ✅ Removes remotes: Ensures no connections to template repository
+Customize docker-compose.yml for your needs (e.g., ports, volumes).
+
+---- 
 
 ## ⚙️ Pre-requisites
+option 1:
+- [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
+- [SQL Server](https://www.microsoft.com/en-us/sql-server/sql-server-downloads)
+- [Redis](https://redis.io/download) (or use Docker)
 1.  Database Setup
 	- Edit `src/Web/appsettings.json` file
 2.  JWT Configuration
@@ -70,6 +113,8 @@ chmod +x setup.sh
 	CONNECTION_STRING=your-connection-string
 	JWT_SECRET=your-jwt-secret
 	```
+----
+
 ## 🛠️ Development Commands
 ### build the database
 ```
@@ -109,33 +154,38 @@ dotnet test --collect:"XPlat Code Coverage"
 
 Navigate to `https://localhost:7215/swagger`
 
+--- 
+
 ## ✨ Features
 
 ### Architecture & Patterns
-- ✅ **Clean Architecture** - Separation of concerns with clear layer boundaries
-- ✅ **CQRS Pattern** - Command Query Responsibility Segregation with MediatR
-- ✅ **Repository Pattern** - Clean data access abstraction
-- ✅ **Domain-Driven Design** - Rich domain models with ULID identifiers
+- Clean Architecture + DDD principles
+- CQRS with MediatR
+- ULID for unique, sortable IDs
+- JWT Authentication + ASP.NET Core Identity
+- Redis caching with Polly circuit breaker
+- Hangfire for background & scheduled jobs
+- Serilog structured logging (console + file)
+- FluentValidation + AutoMapper
+- Swagger/OpenAPI interactive docs
+- Health checks endpoint
+- Dynamic LINQ support
+- Docker Compose ready
+---
 
-### Infrastructure
-- ✅ **Redis Caching** - High-performance distributed caching with Polly circuit breaker for resilience
-- ✅ **SQL Server** - Entity Framework Core with code-first migrations
-- ✅ **Hangfire** - Background job processing and scheduling
-- ✅ **JWT Authentication** - Secure token-based authentication with ASP.NET Core Identity
-
-### Developer Experience
-- ✅ **AutoMapper** - Object-to-object mapping
-- ✅ **FluentValidation** - Elegant validation rules
-- ✅ **Serilog** - Structured logging to console and file
-- ✅ **Swagger/OpenAPI** - Interactive API documentation
-- ✅ **Dynamic LINQ** - Runtime query building
-- ✅ **Docker Support** - Containerization ready
-
-### Reliability
-- ✅ **Circuit Breaker Pattern** - Polly-based resilience for external services
-- ✅ **Graceful Degradation** - App continues working when Redis is unavailable
-- ✅ **Error Handling** - Comprehensive exception handling middleware
-
+## Project Structure
+```
+StartUp/
+├── src/
+│   ├── Domain/               # Entities, Value Objects, Domain Events, ULID IDs
+│   ├── Application/          # CQRS (Commands/Queries/Handlers), Services, Validators
+│   ├── Infrastructure/       # EF Core, Repos, Identity, External Services
+│   └── Web/                  # API Endpoints, Swagger, Health Checks, Program.cs
+├── tests/                    # (Add your unit/integration tests here)
+├── docker-compose.yml        # Docker setup
+├── setup.ps1 & setup.sh      # Project renaming scripts (optional)
+└── README.md
+```
 
 ## 🛠️ Tech Stack
 
@@ -196,20 +246,7 @@ Request → Try Cache (with timeout) → On Failure: Circuit Breaker Opens → F
 ```
 Controller → Service → Repository → DbContext
 ```
-
-
-## 🐳 Docker Support
-
-```bash
-# Build and run with Docker Compose
-docker-compose up --build
-
-# Run specific services
-docker-compose up db redis api
-
-# View logs
-docker-compose logs -f api
-```
+---
 
 ## 📝 API Documentation
 
@@ -217,31 +254,7 @@ Once running, access interactive API documentation at:
 - **Swagger UI**: `https://localhost:7215/swagger`
 - **Hangfire Dashboard**: `https://localhost:7215/hangfire`
 
-## 🔐 Authentication Flow
-
-1. **Register**: `POST /api/auth/register`
-2. **Confirm Email**: `GET /api/auth/confirm-email`
-3. **Login**: `POST /api/auth/login` → Returns JWT token
-4. **Use Token**: Add `Authorization: Bearer {token}` header to requests
-
-## 🚦 Resilience Features
-
-### Redis Circuit Breaker
-- Opens after 2 consecutive failures
-- Stays open for 30 seconds
-- Automatically retries when half-open
-- App continues working without cache when circuit is open
-
-### Connection Timeouts
-- Redis: 1 second connect timeout
-- Operations: 500ms timeout with Polly
-
-
-## Future Enhancements
-- Support  DeploymentTo Azure App Service
-- Support Kubernetes
-- Implement GraphQL API alongside REST
-- 
+---
 
 ## 📚 Resources
 
@@ -263,5 +276,8 @@ This is a template repository. Feel free to fork and customize for your needs!
 MIT License - See [LICENSE.txt](LICENSE.txt) for details
 
 ---
+Questions or feedback?
+- 📧 mahmoudsayed1332002@gmail.com
+- 🔗 LinkedIn: [mahmoudsayed13](https:linkedin.com/in/mahmoudsayed13)
 
 **Built with ❤️ using Clean Architecture principles**

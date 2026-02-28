@@ -3,8 +3,8 @@
   "author": "Mahmoud Sayed",
   "classifications": [ "Web", "API", "Clean Architecture" ],
   "identity": "Rootech.CleanArchitecture.Template",
-  "name": "Clean Architecture Web API",
-  "shortName": "cleanarch-api",
+  "name": "StartUp Clean Architecture Web API",
+  "shortName": "clean-arch-api",
   "tags": {
     "language": "C#",
     "type": "project"

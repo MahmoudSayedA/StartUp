@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2012/06/nuspec.xsd">
+  <metadata>
+    <id>MahmoudSayedA.StartUp.Template</id>
+    <version>10.0.0</version>
+    <authors>Mahmoud Sayed</authors>
+    <description>Clean Architecture template for .NET 10 with Authentication enhanced with CQRS, ULID, JWT, Redis, Hangfire, Serilog, and more.</description>
+    <projectUrl>https://github.com/MahmoudSayedA/PracticeCA</projectUrl>
+    <license type="expression">MIT</license>
+    <tags>dotnet-new;templates;clean-architecture;net9;net10</tags>
+    <packageType name="Template" />
+  </metadata>
+</package>
