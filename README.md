@@ -19,7 +19,7 @@ Perfect for scalable APIs, microservices. Features CQRS, MediatR, EF Core, JWT, 
 
 ## 🚀 Quick Start
 
-## option 2: Use NuGet Template (Recommended)
+## option 1: Use NuGet Template (Recommended) -> soon, not published yet
 ```bash
 # Install the template globally
 dotnet new install MahmoudSayedA.StartUp.Template::10.0.0
