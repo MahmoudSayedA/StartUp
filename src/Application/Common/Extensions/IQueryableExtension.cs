@@ -1,5 +1,6 @@
 ﻿using Application.Common.Abstractions.Collections;
 using FluentValidation.Results;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using System.Globalization;
 using System.Linq.Dynamic.Core;
 using System.Reflection;
@@ -21,10 +22,7 @@ public static class IQueryableExtension
 
         foreach (var filter in filters)
         {
-            if (filter.Operator == "between" && (string.IsNullOrWhiteSpace(filter.Value) || string.IsNullOrWhiteSpace(filter.ValueTo)))
-            {
-                throw new ValidationException("Operator (between) require [value, valueTo] to contains values");
-            }
+
             query = filter.Operator?.ToLower() switch
             {
                 "contains" => query.Where($"{filter.Key}.Contains(@0)", filter.Value),
@@ -55,7 +53,14 @@ public static class IQueryableExtension
         CollectionRequestValidator.ValidateSorting(sortBy, allowedSortFields);
 
         if (string.IsNullOrWhiteSpace(sortBy))
-            return query.OrderBy(defaultSort); // Dynamic.Core OrderBy
+        {
+            //validate entity has Id
+            var prop = typeof(T).GetProperty(defaultSort);
+            if (prop != null)
+                return query.OrderBy(defaultSort); // Dynamic.Core OrderBy
+
+            else return query;
+        }
 
         var direction = string.Equals(sortDirection, "desc", StringComparison.OrdinalIgnoreCase)
             ? "descending"
@@ -71,7 +76,11 @@ public static class IQueryableExtension
     HashSet<string> allowedSearchColumns)
     {
         // Nothing to search
-        if (string.IsNullOrWhiteSpace(search) || searchColumns == null || searchColumns.Count == 0)
+        if (string.IsNullOrWhiteSpace(search) || 
+            searchColumns == null || 
+            searchColumns.Count == 0 || 
+            allowedSearchColumns == null || 
+            allowedSearchColumns.Count == 0)
             return query;
 
         //validate search columns
@@ -104,31 +113,48 @@ public static class IQueryableExtension
 
     private static IQueryable<T> ApplyBetweenFilter<T>(IQueryable<T> query, FilterDescriptor filter)
     {
+        if (filter.Operator == "between" && (string.IsNullOrWhiteSpace(filter.Value) || string.IsNullOrWhiteSpace(filter.ValueTo)))
+        {
+            throw new ValidationException("Operator (between) require [value, valueTo] to contains values");
+        }
+
         var from = ParseValue<T>(filter.Key, filter.Value);
         var to = ParseValue<T>(filter.Key, filter.ValueTo);
+
+        if (Comparer<object>.Default.Compare(from, to) > 0)
+            throw new ValidationException($"'value' must be less than or equal to 'valueTo' for between operator.");
+
         return query.Where($"{filter.Key} >= @0 && {filter.Key} <= @1", from, to);
     }
 
-    private static object? ParseValue<T>(string Key, string? value)
+    private static object? ParseValue<T>(string key, string? value)
     {
         if (value == null) return null;
 
-        var prop = typeof(T).GetProperty(Key,
-            BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
+        try
+        {
+            var prop = typeof(T).GetProperty(key,
+                BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
 
-        if (prop == null) return value;
+            if (prop == null) return value;
 
-        var targetType = Nullable.GetUnderlyingType(prop.PropertyType) ?? prop.PropertyType;
+            var targetType = Nullable.GetUnderlyingType(prop.PropertyType) ?? prop.PropertyType;
 
-        // Handle enums, dates, guids, numerics automatically
-        if (targetType == typeof(Guid)) return Guid.Parse(value);
-        if (targetType == typeof(DateTimeOffset)) return DateTimeOffset.Parse(value, CultureInfo.InvariantCulture).ToUniversalTime();
-        if (targetType == typeof(DateTime)) return DateTime.Parse(value, CultureInfo.InvariantCulture).ToUniversalTime();
-        if (targetType == typeof(TimeSpan)) return TimeSpan.Parse(value, CultureInfo.InvariantCulture);
-        if (targetType == typeof(bool)) return bool.Parse(value);
-        if (targetType.IsEnum) return Enum.Parse(targetType, value, ignoreCase: true);
+            // Handle enums, dates, guids, numerics automatically
+            if (targetType == typeof(Guid)) return Guid.Parse(value);
+            if (targetType == typeof(DateTimeOffset)) return DateTimeOffset.Parse(value, CultureInfo.InvariantCulture).ToUniversalTime();
+            if (targetType == typeof(DateTime)) return DateTime.Parse(value, CultureInfo.InvariantCulture).ToUniversalTime();
+            if (targetType == typeof(TimeSpan)) return TimeSpan.Parse(value, CultureInfo.InvariantCulture);
+            if (targetType == typeof(bool)) return bool.Parse(value);
+            if (targetType.IsEnum) return Enum.Parse(targetType, value, ignoreCase: true);
 
-        return Convert.ChangeType(value, targetType, CultureInfo.InvariantCulture);
+            return Convert.ChangeType(value, targetType, CultureInfo.InvariantCulture);
+        }
+        catch (Exception ex) when (ex is FormatException or InvalidCastException or OverflowException)
+        {
+            throw new ValidationException($"Value '{value}' is not valid for field '{key}'.");
+        }
+
     }
 
 }
