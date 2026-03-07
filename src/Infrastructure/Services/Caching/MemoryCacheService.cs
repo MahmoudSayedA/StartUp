@@ -4,7 +4,7 @@ using Microsoft.Extensions.Caching.Memory;
 using System.Text.Json;
 
 namespace Infrastructure.Services.Caching;
-public class InMemoryCacheService(IMemoryCache cache) : ICacheService
+public class MemoryCacheService(IMemoryCache cache) : ICacheService
 {
     private readonly IMemoryCache _cache = cache;
 

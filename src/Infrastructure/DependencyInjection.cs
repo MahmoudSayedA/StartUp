@@ -5,18 +5,21 @@ using Application.Common.Abstractions.Messaging;
 using Application.Features.Products.Services;
 using Application.Identity.Services;
 using Domain.Constants;
+using Domain.Entities.Users;
 using Hangfire;
 using Infrastructure.Data;
 using Infrastructure.Data.Interceptors;
 using Infrastructure.Identity;
 using Infrastructure.Identity.JWT;
 using Infrastructure.Services.Caching;
+using Infrastructure.Services.CleanUpJobs;
 using Infrastructure.Services.Messaging;
 using Infrastructure.Services.Products;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
+using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -33,6 +36,9 @@ namespace Infrastructure
     {
         public static void AddInfrastructure(this IHostApplicationBuilder builder)
         {
+            
+            RegisterServices(builder.Services);
+
             ConfigureRedisCache(builder.Services, builder.Configuration);
 
             ConfigureDbContext(builder.Services, builder.Configuration);
@@ -45,20 +51,6 @@ namespace Infrastructure
 
             // Register services
             builder.Services.AddSingleton(TimeProvider.System);
-
-            // --- REFACTOR: Split IIdentityService ---
-            builder.Services.AddScoped<IdentityService>();
-            builder.Services.AddScoped<IAuthenticationService>(sp => sp.GetRequiredService<IdentityService>());
-            builder.Services.AddScoped<IPasswordManagementService>(sp => sp.GetRequiredService<IdentityService>());
-            builder.Services.AddScoped<IAccessControlService>(sp => sp.GetRequiredService<IdentityService>());
-            builder.Services.AddScoped<IUserManagementService>(sp => sp.GetRequiredService<IdentityService>());
-
-            builder.Services.AddScoped<ITokenGeneratorService, TokenGeneratorService>();
-
-            builder.Services.AddScoped<IProductService, CachedProductService>();
-            builder.Services.AddScoped<ProductService>();
-
-            builder.Services.AddScoped<IEmailService, FakeEmailService>();
         }
         private static void ConfigureRedisCache(IServiceCollection services, IConfiguration configuration)
         {
@@ -163,6 +155,25 @@ namespace Infrastructure
                     IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.Secret ?? string.Empty)),
                 };
             });
-        }   
+        }
+        private static void RegisterServices(IServiceCollection services)
+        {
+
+            // --- REFACTOR: Split IIdentityService ---
+            services.AddScoped<IdentityService>();
+            services.AddScoped<IAuthenticationService>(sp => sp.GetRequiredService<IdentityService>());
+            services.AddScoped<IPasswordManagementService>(sp => sp.GetRequiredService<IdentityService>());
+            services.AddScoped<IAccessControlService>(sp => sp.GetRequiredService<IdentityService>());
+            services.AddScoped<IUserManagementService>(sp => sp.GetRequiredService<IdentityService>());
+            services.AddScoped<ITokenGeneratorService, TokenGeneratorService>();
+
+            services.AddScoped<IProductService, CachedProductService>();
+            services.AddScoped<ProductService>();
+
+            services.AddScoped<IEmailService, FakeEmailService>();
+            services.AddScoped<RefreshTokenCleanUp>();
+
+
+        }
     }
 }
