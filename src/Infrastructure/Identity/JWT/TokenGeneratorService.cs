@@ -1,10 +1,11 @@
 ﻿using Application.Identity.Services;
-using Domain.Entities;
+using Domain.Entities.Users;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 
 namespace Infrastructure.Identity.JWT
@@ -24,19 +25,28 @@ namespace Infrastructure.Identity.JWT
 
         public int RefreshTokenExpiryInDays => _options.RefreshTokenExpiryInDays;
 
-        public async Task<string> GenerateJwtToken(ApplicationUser user)
+        public string GenerateJwtToken(ApplicationUser user, List<string> userRoles)
         {
+            // guard
+            ArgumentException.ThrowIfNullOrWhiteSpace(_options.Secret, nameof(_options.Secret));
+            if (_options.Secret.Length < 32)
+                throw new InvalidOperationException("JWT secret must be at least 32 characters.");
+
+            //create claims
             var claims = new List<Claim>
             {
-                new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
-                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                new Claim(ClaimTypes.Email, user.Email ?? string.Empty)
+                new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+                new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                new(JwtRegisteredClaimNames.Iat,
+                    DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(),
+                    ClaimValueTypes.Integer64),
             };
 
-            // Fetch roles and add them as claims
-            var roles = await _userManager.GetRolesAsync(user);
-            foreach (var role in roles)
+            if (!string.IsNullOrEmpty(user.Email))
+                    claims.Add(new Claim(ClaimTypes.Email, user.Email));
+
+            // add roles as claims
+            foreach (var role in userRoles)
             {
                 claims.Add(new Claim(ClaimTypes.Role, role));
             }
@@ -56,18 +66,24 @@ namespace Infrastructure.Identity.JWT
                 issuer: _options.ValidIssuer,
                 audience: _options.ValidAudience,
                 claims: claims,
-                expires: DateTime.Now.AddMinutes(_options.ExpiryInMinutes),
+                expires: DateTime.UtcNow.AddMinutes(_options.ExpiryInMinutes),
                 signingCredentials: creds);
 
-            return await Task.Run(() => new JwtSecurityTokenHandler().WriteToken(token));
+            return new JwtSecurityTokenHandler().WriteToken(token);
         }
 
-        public async Task<string> GenerateRefreshToken()
+        public string GenerateRefreshToken()
         {
-            var randomNumber = new byte[32];
-            using var rng = System.Security.Cryptography.RandomNumberGenerator.Create();
-            rng.GetBytes(randomNumber);
-            return await Task.Run(() => Convert.ToBase64String(randomNumber));
+            var randomNumber = new byte[64];
+
+            RandomNumberGenerator.Fill(randomNumber);
+
+            string refresh = Convert.ToBase64String(randomNumber)
+                .Replace("+", "-")
+                .Replace("/", "_")
+                .TrimEnd('=');
+
+            return refresh;
         }
     }
 }

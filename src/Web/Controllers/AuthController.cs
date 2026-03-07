@@ -1,4 +1,5 @@
-﻿using Application.Identity.Commands;
+﻿using Application.Common.Models;
+using Application.Identity.Commands;
 using Microsoft.AspNetCore.Authorization;
 
 namespace Web.Controllers;
@@ -22,6 +23,24 @@ public class AuthController(ISender mediator) : ControllerBase
         var res = await _mediator.Send(command);
         return Ok(res);
     }
+
+    /// <summary>
+    /// استخدم الـ refresh token عشان تجيب access token جديد.
+    /// </summary>
+    /// <remarks>
+    /// بيعمل token rotation — الـ refresh token القديم بيتعمله revoke
+    /// وبييجي refresh token جديد في الـ response.
+    /// </remarks>
+    [HttpPost("refresh")]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(LoginResponseModel), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult<LoginResponseModel>> Refresh([FromBody] RefreshTokenCommand command)
+    {
+        var res = await _mediator.Send(command);
+        return Ok(res);
+    }
+
 
     [HttpGet("confirm-email")]
     public async Task<IActionResult> ConfirmEmail([FromQuery] string email, [FromQuery] string token)

@@ -4,6 +4,7 @@ using Application;
 using Serilog;
 using Infrastructure.Logging;
 using Hangfire;
+using Infrastructure.Services.CleanUpJobs;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -50,6 +51,8 @@ app.MapControllers();
 app.UseSerilogRequestLogging();
 
 app.UseHangfireDashboard("/hangfire");
+
+app.RunScheduleJobs();
 
 app.MapGet("/", () => "StartUp is working...!");
 

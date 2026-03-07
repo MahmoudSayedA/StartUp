@@ -1,4 +1,5 @@
 ﻿using Application.Identity.Services;
+using Domain.Entities.Users;
 using Microsoft.AspNetCore.Identity;
 
 namespace Application.Identity.Commands;
