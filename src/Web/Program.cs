@@ -5,12 +5,14 @@ using Serilog;
 using Infrastructure.Logging;
 using Hangfire;
 using Infrastructure.Services.CleanUpJobs;
+using Application.Common.Exceptions;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.AddApplication();
 builder.AddInfrastructure();
 builder.AddWebServices();
+builder.Services.AddProblemDetails();
 
 // configure logging
 

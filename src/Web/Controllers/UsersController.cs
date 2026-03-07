@@ -1,5 +1,4 @@
-﻿using Application.Identity.Services;
-using Microsoft.AspNetCore.Authorization;
+﻿using Application.Common.Exceptions;
 
 namespace Web.Controllers;
 
@@ -10,9 +9,12 @@ public class UsersController : ControllerBase
 {
     // add role to user
     [HttpPost("add-role")]
-    [Authorize]
+    //[Authorize]
     public Task<IActionResult> AddRoleToUser(string role)
     {
-        return Task.FromResult<IActionResult>(Ok());
+        List<ErrorDetail> errors = [new(role, "role should be lower case.")];
+
+        throw new ValidationException("role should be lower case.", errors);
+        //return Task.FromResult<IActionResult>(Ok());
     }
 }

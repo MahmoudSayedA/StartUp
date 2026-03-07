@@ -1,4 +1,5 @@
-﻿using ValidationException = Application.Common.Exceptions.ValidationException;
+﻿using Application.Common.Extensions;
+using ValidationException = Application.Common.Exceptions.ValidationException;
 
 namespace Application.Common.Behaviours;
 
@@ -28,7 +29,7 @@ public class ValidationBehaviour<TRequest, TResponse> : IPipelineBehavior<TReque
                 .ToList();
 
             if (failures.Count != 0)
-                throw new ValidationException(failures);
+                throw new ValidationException(failures.ToErrorDetailsList());
         }
         return await next(cancellationToken);
     }

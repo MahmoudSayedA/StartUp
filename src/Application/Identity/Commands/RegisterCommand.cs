@@ -1,4 +1,5 @@
 ﻿using Application.Common.Exceptions;
+using Application.Common.Extensions;
 using Application.Identity.Dtos;
 using Application.Identity.Services;
 using Domain.Events.UsersEvents;
@@ -45,11 +46,11 @@ public class RegisterCommandHandler : ICommandHandler<RegisterCommand, string>
         });
         if (!result.Succeeded)
         {
-            ICollection<ValidationFailure> failures = result.Errors
+            List<ValidationFailure> failures = result.Errors
                 .Select(e => new ValidationFailure(string.Empty, e))
                 .ToList();
 
-            throw new Common.Exceptions.ValidationException(failures);
+            throw new Common.Exceptions.ValidationException(failures.ToErrorDetailsList());
         }
         
         // Raise the UserRegisterEvent

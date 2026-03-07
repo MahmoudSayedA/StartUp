@@ -1,88 +1,221 @@
 ﻿using Application.Common.Exceptions;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
+using System.Diagnostics;
 
 namespace Web.Infrastructure;
 
 public class CustomExceptionHandler : IExceptionHandler
 {
     private readonly Dictionary<Type, Func<HttpContext, Exception, Task>> _exceptionHandlers;
+    private readonly ILogger<CustomExceptionHandler> _logger;
+    private readonly IHostEnvironment _env;
 
-    public CustomExceptionHandler()
+    public CustomExceptionHandler(
+        ILogger<CustomExceptionHandler> logger,
+        IHostEnvironment env)
     {
-        // Register known exception types and handlers.
+        _logger = logger;
+        _env = env;
+
         _exceptionHandlers = new()
-            {
-                { typeof(ValidationException), HandleValidationException },
-                { typeof(NotFoundException), HandleNotFoundException },
-                { typeof(UnauthorizedAccessException), HandleUnauthorizedAccessException },
-                { typeof(ForbiddenAccessException), HandleForbiddenAccessException },
-            };
+        {
+            { typeof(ValidationException),          HandleValidationException },
+            { typeof(NotFoundException),            HandleNotFoundException },
+            { typeof(UnauthorizedException),        HandleUnauthorizedException },
+            { typeof(ForbiddenException),           HandleForbiddenException },
+            { typeof(ConflictException),            HandleConflictException },
+            { typeof(BusinessRuleException),        HandleBusinessRuleException },
+            { typeof(UnauthorizedAccessException),  HandleUnauthorizedAccessException },
+        };
     }
 
-    public async ValueTask<bool> TryHandleAsync(HttpContext httpContext, Exception exception, CancellationToken cancellationToken)
+    public async ValueTask<bool> TryHandleAsync(
+        HttpContext httpContext,
+        Exception exception,
+        CancellationToken cancellationToken)
     {
         var exceptionType = exception.GetType();
 
-        if (_exceptionHandlers.TryGetValue(exceptionType, out Func<HttpContext, Exception, Task>? value))
+        if (_exceptionHandlers.TryGetValue(exceptionType, out var handler))
         {
-            await value.Invoke(httpContext, exception);
+            await handler.Invoke(httpContext, exception);
             return true;
         }
 
-        return false;
+        // Unhandled → 500
+        await HandleUnknownException(httpContext, exception);
+        return true;
     }
 
-    private async Task HandleValidationException(HttpContext httpContext, Exception ex)
+    // ─────────────────────────────────────────
+    // Handlers
+    // ─────────────────────────────────────────
+
+    private async Task HandleValidationException(HttpContext ctx, Exception ex)
     {
         var exception = (ValidationException)ex;
+        var traceId = GetTraceId(ctx);
 
-        httpContext.Response.StatusCode = StatusCodes.Status400BadRequest;
+        _logger.LogWarning(
+            "[{TraceId}] Validation failed: {Errors}",
+            traceId,
+            exception.Errors);
 
-        await httpContext.Response.WriteAsJsonAsync(new ValidationProblemDetails(exception.Errors)
+        ctx.Response.StatusCode = StatusCodes.Status400BadRequest;
+
+        await ctx.Response.WriteAsJsonAsync(new ErrorResponse
         {
-            Status = StatusCodes.Status400BadRequest,
-            Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1"
+            StatusCode = StatusCodes.Status400BadRequest,
+            Message = exception.Message,
+            Errors = exception.Errors,
+            TraceId = traceId
         });
     }
 
-    private async Task HandleNotFoundException(HttpContext httpContext, Exception ex)
+    private async Task HandleNotFoundException(HttpContext ctx, Exception ex)
     {
-        var exception = (NotFoundException)ex;
+        var traceId = GetTraceId(ctx);
 
-        httpContext.Response.StatusCode = StatusCodes.Status404NotFound;
+        _logger.LogWarning(
+            "[{TraceId}] Resource not found: {Message}",
+            traceId,
+            ex.Message);
 
-        await httpContext.Response.WriteAsJsonAsync(new ProblemDetails()
+        ctx.Response.StatusCode = StatusCodes.Status404NotFound;
+
+        await ctx.Response.WriteAsJsonAsync(new ErrorResponse
         {
-            Status = StatusCodes.Status404NotFound,
-            Type = "https://tools.ietf.org/html/rfc7231#section-6.5.4",
-            Title = "The specified resource was not found.",
-            Detail = exception.Message
+            StatusCode = StatusCodes.Status404NotFound,
+            Message = ex.Message,
+            TraceId = traceId
         });
     }
 
-    private async Task HandleUnauthorizedAccessException(HttpContext httpContext, Exception ex)
+    private async Task HandleUnauthorizedException(HttpContext ctx, Exception ex)
     {
-        var exception = (UnauthorizedAccessException)ex;
-        httpContext.Response.StatusCode = StatusCodes.Status401Unauthorized;
-        await httpContext.Response.WriteAsJsonAsync(new ProblemDetails
+        var traceId = GetTraceId(ctx);
+
+        _logger.LogWarning(
+            "[{TraceId}] Unauthorized: {Message}",
+            traceId,
+            ex.Message);
+
+        ctx.Response.StatusCode = StatusCodes.Status401Unauthorized;
+
+        await ctx.Response.WriteAsJsonAsync(new ErrorResponse
         {
-            Status = StatusCodes.Status401Unauthorized,
-            Title = "Unauthorized",
-            Type = "https://tools.ietf.org/html/rfc7235#section-3.1",
-            Detail = exception.Message
+            StatusCode = StatusCodes.Status401Unauthorized,
+            Message = ex.Message,
+            TraceId = traceId
         });
     }
 
-    private async Task HandleForbiddenAccessException(HttpContext httpContext, Exception ex)
+    private async Task HandleForbiddenException(HttpContext ctx, Exception ex)
     {
-        httpContext.Response.StatusCode = StatusCodes.Status403Forbidden;
+        var traceId = GetTraceId(ctx);
 
-        await httpContext.Response.WriteAsJsonAsync(new ProblemDetails
+        _logger.LogWarning(
+            "[{TraceId}] Forbidden access: {Message}",
+            traceId,
+            ex.Message);
+
+        ctx.Response.StatusCode = StatusCodes.Status403Forbidden;
+
+        await ctx.Response.WriteAsJsonAsync(new ErrorResponse
         {
-            Status = StatusCodes.Status403Forbidden,
-            Title = "Forbidden",
-            Type = "https://tools.ietf.org/html/rfc7231#section-6.5.3"
+            StatusCode = StatusCodes.Status403Forbidden,
+            Message = ex.Message,
+            TraceId = traceId
         });
     }
+
+    private async Task HandleConflictException(HttpContext ctx, Exception ex)
+    {
+        var traceId = GetTraceId(ctx);
+
+        _logger.LogWarning(
+            "[{TraceId}] Conflict: {Message}",
+            traceId,
+            ex.Message);
+
+        ctx.Response.StatusCode = StatusCodes.Status409Conflict;
+
+        await ctx.Response.WriteAsJsonAsync(new ErrorResponse
+        {
+            StatusCode = StatusCodes.Status409Conflict,
+            Message = ex.Message,
+            TraceId = traceId
+        });
+    }
+
+    private async Task HandleBusinessRuleException(HttpContext ctx, Exception ex)
+    {
+        var traceId = GetTraceId(ctx);
+
+        _logger.LogWarning(
+            "[{TraceId}] Business rule violation: {Message}",
+            traceId,
+            ex.Message);
+
+        ctx.Response.StatusCode = StatusCodes.Status422UnprocessableEntity;
+
+        await ctx.Response.WriteAsJsonAsync(new ErrorResponse
+        {
+            StatusCode = StatusCodes.Status422UnprocessableEntity,
+            Message = ex.Message,
+            TraceId = traceId
+        });
+    }
+
+    // .NET built-in — بتيجي من [Authorize] attribute
+    private async Task HandleUnauthorizedAccessException(HttpContext ctx, Exception ex)
+    {
+        var traceId = GetTraceId(ctx);
+
+        _logger.LogWarning(
+            "[{TraceId}] Unauthorized access: {Message}",
+            traceId,
+            ex.Message);
+
+        ctx.Response.StatusCode = StatusCodes.Status401Unauthorized;
+
+        await ctx.Response.WriteAsJsonAsync(new ErrorResponse
+        {
+            StatusCode = StatusCodes.Status401Unauthorized,
+            Message = "Unauthorized.",
+            TraceId = traceId
+        });
+    }
+
+    // Catch-all — أي exception مش معروفة
+    private async Task HandleUnknownException(HttpContext ctx, Exception ex)
+    {
+        var traceId = GetTraceId(ctx);
+
+        // هنا Error مش Warning — دي حاجة مش متوقعة
+        _logger.LogError(
+            ex,
+            "[{TraceId}] Unhandled exception: {Message}",
+            traceId,
+            ex.Message);
+
+        ctx.Response.StatusCode = StatusCodes.Status500InternalServerError;
+
+        await ctx.Response.WriteAsJsonAsync(new ErrorResponse
+        {
+            StatusCode = StatusCodes.Status500InternalServerError,
+            Message = _env.IsDevelopment()
+                            ? ex.Message
+                            : "An unexpected error occurred. Please try again later.",
+            TraceId = traceId
+        });
+    }
+
+    // ─────────────────────────────────────────
+    // Helpers
+    // ─────────────────────────────────────────
+
+    private static string GetTraceId(HttpContext ctx)
+        => Activity.Current?.Id ?? ctx.TraceIdentifier;
 }

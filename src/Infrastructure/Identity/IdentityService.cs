@@ -213,7 +213,7 @@ public class IdentityService : IAuthenticationService,
         var result = await _userManager.ResetPasswordAsync(user, model.Token, model.NewPassword);
 
         if (!result.Succeeded)
-            throw new ValidationException(result.Errors.Select(x => new ValidationFailure(x.Code, x.Description)));
+            throw new ValidationException(result.Errors.Select(x => new ErrorDetail(x.Code, x.Description)));
 
         // await emailService.SendEmailAsync(user.Email!, "Password Reset", "Your password has been reset successfully.", isHtml: true);
 
@@ -227,7 +227,7 @@ public class IdentityService : IAuthenticationService,
 
         var result = await _userManager.ChangePasswordAsync(user!, model.CurrentPassword, model.NewPassword);
         if (!result.Succeeded)
-            throw new ValidationException(result.Errors.Select(x => new ValidationFailure(x.Code, x.Description)));
+            throw new ValidationException(result.Errors.Select(x => new ErrorDetail(x.Code, x.Description)));
 
         // Send email notification
         // await emailService.SendEmailAsync(user.Email!, "Password Changed", "Your password has been changed successfully.", isHtml: true);
@@ -242,7 +242,7 @@ public class IdentityService : IAuthenticationService,
 
         var result = await _userManager.ConfirmEmailAsync(user, token);
         if (!result.Succeeded)
-            throw new ValidationException(result.Errors.Select(x => new ValidationFailure(x.Code, x.Description)));
+            throw new ValidationException(result.Errors.Select(x => new ErrorDetail(x.Code, x.Description)));
     }
 
 }
