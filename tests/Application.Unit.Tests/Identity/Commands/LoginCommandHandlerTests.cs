@@ -23,6 +23,7 @@ public class LoginCommandHandlerTests
             {
                 Token = It.IsAny<string>(),
                 RefreshToken = It.IsAny<string>(),
+                RefreshTokenExpireAt = It.IsAny<DateTimeOffset>(),
                 TokenExpiryInMinutes = It.IsAny<int>(),
                 UserId = It.IsAny<string>(),
                 Roles = It.IsAny<ICollection<string>>(),
