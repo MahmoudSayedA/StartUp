@@ -2,7 +2,9 @@ using Application.Common.Exceptions;
 using Application.Common.Models;
 using Application.Identity.Dtos;
 using Application.Identity.Services;
+using Domain.Entities.Users;
 using FluentValidation.Results;
+using Infrastructure.Data;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -21,6 +23,7 @@ public class IdentityService : IAuthenticationService,
     private readonly ILogger<IdentityService> _logger;
     private readonly IUserClaimsPrincipalFactory<ApplicationUser> _userClaimsPrincipalFactory;
     private readonly IAuthorizationService _authorizationService;
+    private readonly ApplicationDbContext _context;
 
     public IdentityService(
         RoleManager<ApplicationRole> roleManager,
@@ -28,7 +31,8 @@ public class IdentityService : IAuthenticationService,
         ITokenGeneratorService tokenGenerator,
         ILogger<IdentityService> logger,
         IUserClaimsPrincipalFactory<ApplicationUser> userClaimsPrincipalFactory,
-        IAuthorizationService authorizationService)
+        IAuthorizationService authorizationService,
+        ApplicationDbContext context)
     {
         _roleManager = roleManager;
         _userManager = userManager;
@@ -36,6 +40,7 @@ public class IdentityService : IAuthenticationService,
         _logger = logger;
         _userClaimsPrincipalFactory = userClaimsPrincipalFactory;
         _authorizationService = authorizationService;
+        _context = context;
     }
 
     public async Task<Result<Guid>> RegisterAsync(RegisterDto model)
@@ -71,10 +76,10 @@ public class IdentityService : IAuthenticationService,
             throw new UnauthorizedAccessException("Email is not confirmed.");
         }
         ICollection<string> roles = await _userManager.GetRolesAsync(user);
-        var token = await _tokenGenerator.GenerateJwtToken(user);
-
-        // TODO: Save to Db
-        var refreshToken = await _tokenGenerator.GenerateRefreshToken();
+        var token = _tokenGenerator.GenerateJwtToken(user, [.. roles]);
+        
+        //generate refresh and save it
+        var refreshTokenEntity = await GetOrCreateRefreshTokenAsync(user);
 
         return new LoginResponseModel
         {
@@ -82,7 +87,8 @@ public class IdentityService : IAuthenticationService,
             Roles = roles,
             Token = token,
             TokenExpiryInMinutes = _tokenGenerator.TokenExpiryInMinutes,
-            RefreshToken = refreshToken,
+            RefreshToken = refreshTokenEntity.Token,
+            RefreshTokenExpireAt = refreshTokenEntity.ExpiresAt,
         };
     }
 
@@ -172,9 +178,18 @@ public class IdentityService : IAuthenticationService,
         };
     }
 
-    public Task SaveRefreshTokenAsync(ApplicationUser user, string refreshToken)
+    public async Task<RefreshToken> GetOrCreateRefreshTokenAsync(ApplicationUser user)
     {
-        throw new NotImplementedException();
+        var old = await _context.RefreshTokens.Where(r => r.UserId == user.Id && r.ExpiresAt > DateTimeOffset.UtcNow).FirstOrDefaultAsync();
+        if (old == null || old.IsActive == false)
+        {
+            var newRefresh = _tokenGenerator.GenerateRefreshToken();
+            var refreshEntity = RefreshToken.Create(user.Id, newRefresh, _tokenGenerator.RefreshTokenExpiryInDays);
+            await _context.RefreshTokens.AddAsync(refreshEntity);
+            await _context.SaveChangesAsync();
+            return refreshEntity;
+        }
+        return old;
     }
 
     public async Task<string> ForgotPasswordAsync(string email)
