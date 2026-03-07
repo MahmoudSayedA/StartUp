@@ -51,6 +51,8 @@ app.UseSerilogRequestLogging();
 
 app.UseHangfireDashboard("/hangfire");
 
+app.MapGet("/", () => "StartUp is working...!");
+
 app.Run();
 
 
